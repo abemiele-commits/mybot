@@ -98,13 +98,19 @@ async def help_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
+    chat_type = update.message.chat.type
+
+    # В группе реагируем только на упоминание бота
+    if chat_type in ["group", "supergroup"]:
+        bot_username = ctx.bot.username
+        if f"@{bot_username}" not in text:
+            return  # Молчим если не упомянули
+        text = text.replace(f"@{bot_username}", "").strip()
 
     await update.message.chat.send_action("typing")
-
     add_to_history(user_id, "user", text)
     reply = ask_claude(user_id)
     add_to_history(user_id, "assistant", reply)
-
     await update.message.reply_text(reply)
 
 
@@ -112,6 +118,11 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def handle_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     caption = update.message.caption or "Опиши это изображение подробно."
+    chat_type = update.message.chat.type
+    if chat_type in ["group", "supergroup"]:
+        bot_username = ctx.bot.username
+        if f"@{bot_username}" not in (caption or ""):
+            return
 
     await update.message.chat.send_action("typing")
 
@@ -141,6 +152,11 @@ async def handle_document(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     doc = update.message.document
     caption = update.message.caption or "Проанализируй этот документ и кратко опиши его содержимое."
+    chat_type = update.message.chat.type
+    if chat_type in ["group", "supergroup"]:
+        bot_username = ctx.bot.username
+        if f"@{bot_username}" not in (caption or ""):
+            return
 
     await update.message.chat.send_action("typing")
 
